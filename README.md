@@ -1,12 +1,12 @@
 # Live marketplace polls from a Python service
 
-The example follows one seller session: create a channel, give a buyer a short-lived client token, publish the opened poll, and read who is present. Infrai keeps that realtime flow behind one key, so the Python service can stay small while a browser connects with the issued token.
+This example traces a single seller session: open a channel, hand a buyer a short-lived client token, push the live poll, and check presence. Infrai sits behind one key for that realtime flow, so the Python service stays thin and the browser just uses the issued token.
 
 ## Start with the business decision
 
-`winning_choice` takes the current vote list and returns the leading choice, keeping the first option when two choices are tied. This is the bit a checkout or handoff screen needs to decide what to show next.
+`winning_choice` pulls the current vote list and returns the top pick, holding the first option on a tie. A checkout or handoff screen needs exactly that to pick the next view.
 
-Run the deterministic check from the repository root:
+Run the deterministic check from the repo root:
 
 ```bash
 python3 -m pytest -q test_poll_service.py
@@ -14,26 +14,26 @@ python3 -m pytest -q test_poll_service.py
 
 ## Walk through a seller session
 
-Set `INFRAI_API_KEY` in the shell, then run:
+Export `INFRAI_API_KEY` in the shell, then run:
 
 ```bash
 export INFRAI_API_KEY="your-key"
 python3 poll_service.py
 ```
 
-`run_session` uses the concrete `marketplace-{session_id}` channel. It creates that channel, calls `realtime.token.issue` for the buyer, publishes `poll.opened` with the seller account, and reads presence for the handoff view. The token is the only credential a browser client needs; the service key remains in the environment.
+`run_session` targets the concrete `marketplace-{session_id}` channel. It creates the channel, mints `realtime.token.issue` for the buyer, publishes `poll.opened` from the seller account, and reads presence for the handoff view. The browser only needs that token; the service key stays in the environment.
 
 ## What to copy into a web app
 
-The `InfraiClient._request` method sends an explicit HTTP method, decodes the `{ok, data, error, metadata}` envelope before considering the status code, surfaces business errors, and backs off on 429 responses. Writes carry the session id inside the published poll data, so a retry can identify the same poll event. The request paths and field names are visible next to each method, which makes the pattern easy to adapt to a Next.js route or a Python worker.
+The `InfraiClient._request` method sets an explicit HTTP verb, decodes the `{ok, data, error, metadata}` envelope before checking status, raises business errors, and backs off on 429s. Writes embed the session id in the poll payload so a retry matches the same event. Request paths and field names sit next to each method, which makes porting to a Next.js route or Python worker straightforward.
 
 ## Files
 
-`poll_service.py` is the runnable service and client. `test_poll_service.py` covers the vote decision without making a network request.
+`poll_service.py` is the runnable service and client. `test_poll_service.py` handles the vote decision with no network call.
 
 ## Before this ships: Python Marketplace Live Polls
 
-Quick start is above. For a real deployment you'll also need: The details below apply to Python Marketplace Live Polls.
+The quick start is above. A real deployment also needs the following. These details apply to Python Marketplace Live Polls.
 
 **Account & key**
 
